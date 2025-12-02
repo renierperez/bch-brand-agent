@@ -26,7 +26,7 @@ FROM python:3.11-slim
 WORKDIR /app
 COPY . .
 RUN pip install --no-cache-dir google-cloud-firestore google-cloud-bigquery google-cloud-aiplatform requests pyyaml markdown
-CMD ["python", "test_agent.py"] # Change to main execution script later
+CMD ["python", "main.py"]
 EOF
 
 echo "Building and pushing Docker image..."

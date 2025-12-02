@@ -14,9 +14,10 @@ An autonomous AI agent powered by **Google Gemini 2.5 Pro** and **Vertex AI Grou
 
 ![Architecture Diagram](docs/architecture_diagram.png)
 
-*   **Core Logic**: Python 3.11 modular agent.
+*   **Core Logic**: Python 3.11 modular agent (`main.py`).
 *   **AI Model**: Gemini 2.5 Pro (Vertex AI).
-*   **Search**: Vertex AI Grounding + SerpApi (fallback/specialized).
+*   **Memory**: Google Cloud Firestore (Deduplication).
+*   **Search**: Vertex AI Grounding + SerpApi (fallback/social).
 *   **Compute**: Google Cloud Run (Serverless Jobs).
 *   **Scheduling**: Google Cloud Scheduler (Weekly, Mondays at 8:00 AM Chile Time).
 *   **Security**: Google Secret Manager for credentials.
@@ -31,6 +32,7 @@ An autonomous AI agent powered by **Google Gemini 2.5 Pro** and **Vertex AI Grou
     *   Cloud Build API
     *   Secret Manager API
     *   Cloud Scheduler API
+    *   Firestore API
 3.  **gcloud CLI** installed and authenticated.
 4.  **SerpApi Key** (for specialized search).
 5.  **Gmail App Password** (for sending emails).
@@ -83,4 +85,4 @@ gcloud run jobs execute brand-monitoring-job --region us-central1
 
 *   **Schedule**: Default is Mondays at 8:00 AM (Chile Time). Modify `deploy_brand.sh` to change.
 *   **Prompts**: Edit `prompts/instructions.yaml` to adjust the analysis logic.
-*   **Target Brand**: Currently hardcoded for "Banco de Chile". Modify `test_agent.py` to change.
+*   **Memory**: Deduplication logic is in `memory.py`, using Firestore collection `bch_processed_news`.
