@@ -16,26 +16,26 @@ The solution is built on a **Serverless Event-Driven Architecture** to ensure sc
 
 ```mermaid
 graph TD
-    Scheduler[Cloud Scheduler] -->|Trigger (CRON)| RunJob[Cloud Run Job]
+    Scheduler["Cloud Scheduler"] -->|"Trigger (CRON)"| RunJob["Cloud Run Job"]
     
     subgraph "Cloud Run Execution Environment"
-        Agent[Python Agent Logic]
-        Tools[Tool Definitions]
+        Agent["Python Agent Logic"]
+        Tools["Tool Definitions"]
     end
     
     RunJob --> Agent
     
-    Agent -->|1. Search & Grounding| Vertex[Vertex AI (Gemini 2.5 Pro)]
-    Vertex -->|Grounding| GoogleSearch[Google Search]
+    Agent -->|"1. Search & Grounding"| Vertex["Vertex AI (Gemini 2.5 Pro)"]
+    Vertex -->|"Grounding"| GoogleSearch["Google Search"]
     
-    Agent -->|2. Specialized Search| SerpApi[SerpApi (Fallback/Social)]
+    Agent -->|"2. Specialized Search"| SerpApi["SerpApi (Fallback/Social)"]
     
-    Agent -->|3. Retrieve Secrets| Secrets[Secret Manager]
+    Agent -->|"3. Retrieve Secrets"| Secrets["Secret Manager"]
     
-    Agent -->|4. Send Report| Gmail[SMTP / Gmail]
+    Agent -->|"4. Send Report"| Gmail["SMTP / Gmail"]
     
     subgraph "Data & Context"
-        Prompts[YAML Prompts]
+        Prompts["YAML Prompts"]
     end
     
     Agent -.-> Prompts
