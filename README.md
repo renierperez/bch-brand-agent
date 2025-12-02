@@ -12,6 +12,8 @@ An autonomous AI agent powered by **Google Gemini 2.5 Pro** and **Vertex AI Grou
 
 ## 🏗️ Architecture
 
+![Architecture Diagram](docs/architecture_diagram.png)
+
 *   **Core Logic**: Python 3.11 modular agent.
 *   **AI Model**: Gemini 2.5 Pro (Vertex AI).
 *   **Search**: Vertex AI Grounding + SerpApi (fallback/specialized).
