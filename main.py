@@ -47,6 +47,32 @@ def main():
 
     if not new_items:
         print("✅ No hay noticias nuevas relevantes desde la última ejecución.")
+        
+        # Enviar correo de "Sin Novedades"
+        months_es = {
+            1: "Ene", 2: "Feb", 3: "Mar", 4: "Abr", 5: "May", 6: "Jun",
+            7: "Jul", 8: "Ago", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dic"
+        }
+        now = datetime.now()
+        month_es = months_es[now.month]
+        formatted_date = f"[{month_es} {now.day}, {now.year}]"
+        
+        subject = f"{formatted_date} Banco de Chile: Reporte de Monitoreo - Sin Novedades"
+        body = """
+        <div style="text-align: center; padding: 30px 20px;">
+            <div style="font-size: 48px; margin-bottom: 15px;">✅</div>
+            <h2 style="color: #2E7D32; margin: 0 0 10px 0; font-family: Helvetica, Arial, sans-serif;">Sin Novedades Relevantes</h2>
+            <p style="color: #555; font-size: 16px; line-height: 1.5; margin: 0 0 20px 0;">
+                El sistema de monitoreo no ha detectado nuevas menciones críticas ni noticias relevantes desde la última ejecución.
+            </p>
+            <div style="background-color: #f5f5f5; border-radius: 8px; padding: 15px; display: inline-block;">
+                <p style="color: #777; font-size: 14px; margin: 0;">
+                    <strong>Estado del Agente:</strong> 🟢 Activo y Monitoreando
+                </p>
+            </div>
+        </div>
+        """
+        send_alert_email(subject, body)
         return
 
     print(f"⚡ Procesando {len(new_items)} noticias nuevas con Gemini...")
