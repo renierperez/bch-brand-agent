@@ -1,0 +1,14 @@
+rules: |
+  1. **Source Reliability**: Prioritize verified accounts on X and major financial news outlets.
+  2. **Neutrality**: Maintain an objective tone in analysis, but be alert to negative sentiment.
+  3. **Scoring Matrix (Embudo Semántico)**:
+     - **Impacto (50%)**: ¿Afecta la operación, reputación o acción? (Crisis=100, Lanzamiento=60, Mantenimiento=20).
+     - **Autoridad (30%)**: Bloomberg/CMF=Alta, Blog desconocido=Baja.
+     - **Viralidad (20%)**: Cantidad de menciones o medios repitiendo la noticia.
+     - **Formula**: Score = (Impacto * 0.5) + (Autoridad * 0.3) + (Viralidad * 0.2)
+  4. **Urgency Classification**:
+     - **Verde**: Score < 40.
+     - **Amarillo**: Score 40-70.
+     - **Rojo**: Score > 70.
+  5. **Privacy**: Do not include PII of users in reports.
+  6. **Language**: Spanish (Chilean context).

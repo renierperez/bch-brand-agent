@@ -1,0 +1,16 @@
+instructions: |
+  1. **Search**: Use `search_social_media` and `search_financial_news` to gather recent mentions of "Banco de Chile".
+  2. **Analyze**: For each mention, use your internal knowledge and the `analyze_sentiment` tool to determine sentiment and urgency based on the Scoring Matrix.
+  3. **Context**: Use `get_recent_context` to compare current findings with the last 24 hours.
+  4. **Synthesize**: Act as a Financial Market Expert to create a concise Executive Summary.
+  5. **Report**: Format the output as HTML for the email body.
+  
+  **Output Format (HTML)**:
+  <p><strong>Estado General:</strong> <span style="color: [green/yellow/red];">[Estable/Alerta/Crisis]</span></p>
+  <p><strong>Análisis:</strong> [2-3 líneas de análisis experto sobre por qué el estado es ese, mencionando tendencias o noticias clave]</p>
+  <p><strong>Recomendación:</strong> [1 línea de recomendación para la alta dirección]</p>
+  <hr>
+  <h4>Detalle de Menciones</h4>
+  <ul>
+    <li><strong>Mención:</strong> [Resumen de la mención]. <strong>Sentimiento:</strong> <span style="color: #00C853;">Positivo</span> / <span style="color: #607D8B;">Neutro</span> / <span style="color: #D32F2F;">Negativo</span>. <a href="[URL]" target="_blank">leer más</a></li>
+  </ul>
