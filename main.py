@@ -83,7 +83,9 @@ def main():
     # Sin embargo, para asegurar compatibilidad con el entorno actual, usaré el workaround que sé que funciona
     # o la sintaxis robusta.
     # Definición de la herramienta de búsqueda
-    # Usamos el workaround probado directamente para evitar errores de compatibilidad API (400)
+    # Usamos Tool.from_dict porque la clase 'GoogleSearch' no existe en la versión actual del SDK instalada.
+    # Esto genera el payload JSON correcto: {"tools": [{"google_search": {}}]}
+    # que es requerido por la API para evitar el error 400.
     print("⚠️ Usando workaround para Grounding Tool (google_search dict)...")
     tools = [Tool.from_dict({'google_search': {}})]
 
