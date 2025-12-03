@@ -2,9 +2,10 @@ import os
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.image import MIMEImage
 
-def send_alert_email(subject: str, body: str, recipient: str = None) -> str:
-    """Sends an email alert with Banco de Chile branding."""
+def send_alert_email(subject: str, body: str, recipient: str = None, chart_buffer=None) -> str:
+    """Sends an email alert with Banco de Chile branding and optional trend chart."""
     sender_email = os.environ.get("GMAIL_USER")
     password = os.environ.get("GMAIL_PASSWORD")
     if not recipient:
@@ -13,7 +14,7 @@ def send_alert_email(subject: str, body: str, recipient: str = None) -> str:
     if not sender_email or not password:
         return "Gmail credentials not found."
     
-    msg = MIMEMultipart()
+    msg = MIMEMultipart('related')
     msg['From'] = sender_email
     msg['To'] = recipient
     msg['Subject'] = subject
@@ -23,6 +24,16 @@ def send_alert_email(subject: str, body: str, recipient: str = None) -> str:
     cleaned_body = body.replace("```html", "").replace("```", "").strip()
     html_body_content = markdown.markdown(cleaned_body)
     
+    # Chart HTML section
+    chart_html = ""
+    if chart_buffer:
+        chart_html = """
+        <div style="margin-top: 30px; text-align: center;">
+            <h3 style="color: #666; font-size: 16px; margin-bottom: 15px;">Tendencia Histórica (Brand Health Index)</h3>
+            <img src="cid:trend_chart" alt="Gráfico de Tendencia" style="max-width: 100%; border: 1px solid #ddd; border-radius: 5px;">
+        </div>
+        """
+
     # Banco de Chile Branding (Simplified HTML)
     html_body = f"""
     <html>
@@ -42,6 +53,8 @@ def send_alert_email(subject: str, body: str, recipient: str = None) -> str:
                     </div>
                 </div>
                 
+                {chart_html}
+                
                 <div style="font-size: 12px; color: #666; margin-top: 30px; border-top: 1px solid #eee; padding-top: 15px; text-align: center;">
                     <p style="margin: 5px 0;">Este es un mensaje automático del Agente de Vigilancia de Marca.</p>
                     <p style="margin: 5px 0;">Generado por la IA de <strong>Google Gemini 2.5 Pro</strong></p>
@@ -52,8 +65,21 @@ def send_alert_email(subject: str, body: str, recipient: str = None) -> str:
     </html>
     """
     
-    msg.attach(MIMEText(html_body, 'html'))
+    # Attach HTML part
+    msg_alternative = MIMEMultipart('alternative')
+    msg.attach(msg_alternative)
+    msg_alternative.attach(MIMEText(html_body, 'html'))
     
+    # Attach Image if exists
+    if chart_buffer:
+        try:
+            image = MIMEImage(chart_buffer.read())
+            image.add_header('Content-ID', '<trend_chart>')
+            image.add_header('Content-Disposition', 'inline', filename='trend.png')
+            msg.attach(image)
+        except Exception as e:
+            print(f"Error attaching image: {e}")
+
     try:
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
             server.login(sender_email, password)

@@ -6,6 +6,8 @@ from tools import search_financial_news, search_social_media
 from memory import BrandMemory
 from mailer import send_alert_email
 from datetime import datetime
+import re
+from visualizer import generate_trend_chart
 
 # Configuración de Logging
 logging.basicConfig(level=logging.INFO)
@@ -125,7 +127,7 @@ def main():
     )
 
     # Convertimos la lista de noticias nuevas a texto para el prompt
-    context_str = "\n".join([f"- {n.get('title', 'Sin título')} ({n.get('link', 'No link')})" for n in new_items])
+    context_str = "\n".join([f"- {n.get('title', 'Sin título')} (Date: {n.get('date', 'Unknown')}) [Link: {n.get('link', 'No link')}]" for n in new_items])
 
     prompt = f"""
     Analiza las siguientes menciones NUEVAS recolectadas hoy {datetime.now().strftime('%Y-%m-%d')}:
@@ -134,13 +136,37 @@ def main():
     
     Tarea:
     1. Verifica la veracidad usando Grounding (Google Search).
-    2. Genera el 'Resumen Ejecutivo de Riesgo' en formato HTML para el cuerpo del correo.
-    3. Asegúrate de incluir 'Estado General', 'Análisis' y 'Recomendación' al inicio, antes del detalle.
+    2. FILTRA: Descarta noticias con fecha > 3 meses.
+    3. Genera el 'Resumen Ejecutivo de Riesgo' en formato HTML.
+    4. Asegúrate de incluir 'Brand Health Index' (0-100) y Tags [CATEGORÍA].
+    5. USA ENLACES DIRECTOS (No Google Redirects).
     """
 
     try:
         response = model.generate_content(prompt)
         html_report = response.text
+        
+        # Extract Score
+        current_score = 0
+        try:
+            match = re.search(r"Brand Health Index:.*?(\d+)/100", html_report)
+            if match:
+                current_score = int(match.group(1))
+        except Exception as e:
+            logging.warning(f"Could not extract Brand Health Index: {e}")
+
+        # Save to Memory
+        if current_score > 0:
+            memory.save_daily_summary(current_score)
+
+        # Generate Chart
+        history_data = memory.get_history_stats(limit=10)
+        chart_buffer = None
+        if len(history_data) > 1:
+            try:
+                chart_buffer = generate_trend_chart(history_data)
+            except Exception as e:
+                logging.error(f"Error generating chart: {e}")
         
         # 4. Acción: Enviar Correo y Guardar en Memoria
         # Formato de fecha personalizado para el asunto
@@ -155,7 +181,7 @@ def main():
         subject = f"{formatted_date} Banco de Chile: Resumen de Marca e Inteligencia de Mercado - Powered by Gemini"
         
         # Enviar correo
-        send_alert_email(subject, html_report)
+        send_alert_email(subject, html_report, chart_buffer=chart_buffer)
         
         # Guardamos en memoria SOLO si el envío fue exitoso
         print("💾 Actualizando memoria...")

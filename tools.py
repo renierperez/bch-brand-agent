@@ -30,7 +30,8 @@ def search_social_media(query: str, limit: int = 10) -> List[Dict[str, Any]]:
             results.append({
                 "title": result.get("title"),
                 "link": result.get("link"),
-                "snippet": result.get("snippet")
+                "snippet": result.get("snippet"),
+                "date": result.get("date") or result.get("time_ago")
             })
         return results
     except Exception as e:
@@ -62,7 +63,8 @@ def search_financial_news(query: str, limit: int = 5) -> List[Dict[str, Any]]:
             results.append({
                 "title": result.get("title"),
                 "link": result.get("link"),
-                "snippet": result.get("snippet")
+                "snippet": result.get("snippet"),
+                "date": result.get("date") or result.get("time_ago")
             })
         return results
     except Exception as e:

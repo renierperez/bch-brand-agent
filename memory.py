@@ -46,3 +46,42 @@ class BrandMemory:
             "processed_at": firestore.SERVER_TIMESTAMP,
             "sentiment": news_item.get('sentiment', 'unknown')
         })
+
+    def save_daily_summary(self, score: int):
+        """Guarda el Brand Health Index del día."""
+        if not self.db: return
+        
+        try:
+            # Usamos timestamp como ID para historial cronológico
+            doc_ref = self.db.collection("bch_brand_history").document()
+            doc_ref.set({
+                "timestamp": firestore.SERVER_TIMESTAMP,
+                "brand_index": score,
+                "date_str": datetime.datetime.now().strftime("%Y-%m-%d")
+            })
+        except Exception as e:
+            logging.error(f"Error guardando historial: {e}")
+
+    def get_history_stats(self, limit: int = 10) -> List[Dict[str, Any]]:
+        """Recupera el historial de Brand Health Index para el gráfico."""
+        if not self.db: return []
+        
+        try:
+            docs = self.db.collection("bch_brand_history")\
+                .order_by("timestamp", direction=firestore.Query.DESCENDING)\
+                .limit(limit)\
+                .stream()
+            
+            history = []
+            for doc in docs:
+                data = doc.to_dict()
+                history.append({
+                    "date": data.get("timestamp"), # Datetime object
+                    "score": data.get("brand_index", 0)
+                })
+            
+            # Reordenamos para que el gráfico vaya de izquierda (pasado) a derecha (presente)
+            return sorted(history, key=lambda x: x['date'])
+        except Exception as e:
+            logging.error(f"Error recuperando historial: {e}")
+            return []
