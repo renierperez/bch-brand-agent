@@ -4,8 +4,78 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
 
-def send_alert_email(subject: str, body: str, recipient: str = None, chart_buffer=None) -> str:
+def _generate_indicators_html(indicators):
+    if not indicators:
+        return ""
+    
+    # CSS Inline para las "tarjetas" de indicadores
+    card_style = """
+        display: inline-block;
+        width: 22%; 
+        margin: 0 1%;
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 5px;
+        text-align: center;
+        padding: 10px 0;
+    """
+    
+    value_style = "font-size: 16px; font-weight: bold; color: #003399; margin: 5px 0;"
+    label_style = "font-size: 11px; color: #666; text-transform: uppercase;"
+
+    html = f"""
+    <div style="margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px;">
+        <h4 style="color: #444; margin-bottom: 15px; font-size: 14px;">Indicadores Económicos (Chile)</h4>
+        <div style="text-align: center;">
+            <div style="{card_style}">
+                <div style="{label_style}">UF Hoy</div>
+                <div style="{value_style}">{indicators['UF']['value']}</div>
+            </div>
+            <div style="{card_style}">
+                <div style="{label_style}">Dólar</div>
+                <div style="{value_style}">{indicators['Dolar']['value']}</div>
+            </div>
+            <div style="{card_style}">
+                <div style="{label_style}">Euro</div>
+                <div style="{value_style}">{indicators['Euro']['value']}</div>
+            </div>
+            <div style="{card_style}">
+                <div style="{label_style}">UTM</div>
+                <div style="{value_style}">{indicators['UTM']['value']}</div>
+            </div>
+        </div>
+        <p style="font-size: 10px; color: #999; text-align: center; margin-top: 10px;">
+            Fuente: mindicador.cl
+        </p>
+    </div>
+    """
+    return html
+
+def send_alert_email(subject: str, body: str, recipient: str = None, chart_buffer=None, indicators=None) -> str:
     """Sends an email alert with Banco de Chile branding and optional trend chart."""
+    
+    # CSS para el Tech Insight (Estilo "Google Cloud")
+    tech_insight_style = """
+    <style>
+        .tech-insight {
+            background-color: #f8f9fa; /* Fondo gris muy suave */
+            border-left: 4px solid #4285F4; /* Google Blue */
+            padding: 15px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            font-family: 'Roboto', Arial, sans-serif;
+            font-size: 14px;
+            color: #5f6368;
+            border-radius: 0 4px 4px 0;
+        }
+        .tech-insight strong {
+            color: #202124;
+            display: block;
+            margin-bottom: 5px;
+        }
+    </style>
+    """
+
     sender_email = os.environ.get("GMAIL_USER")
     password = os.environ.get("GMAIL_PASSWORD")
     if not recipient:
@@ -23,6 +93,9 @@ def send_alert_email(subject: str, body: str, recipient: str = None, chart_buffe
     # Clean Gemini output if it includes code blocks
     cleaned_body = body.replace("```html", "").replace("```", "").strip()
     html_body_content = markdown.markdown(cleaned_body)
+    
+    # Inyectamos el estilo al principio del HTML content
+    html_body_content = tech_insight_style + html_body_content
     
     # Chart HTML section
     chart_html = ""
@@ -54,6 +127,8 @@ def send_alert_email(subject: str, body: str, recipient: str = None, chart_buffe
                 </div>
                 
                 {chart_html}
+                
+                {_generate_indicators_html(indicators)}
                 
                 <div style="font-size: 12px; color: #666; margin-top: 30px; border-top: 1px solid #eee; padding-top: 15px; text-align: center;">
                     <p style="margin: 5px 0;">Este es un mensaje automático del Agente de Vigilancia de Marca.</p>

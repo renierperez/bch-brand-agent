@@ -8,6 +8,7 @@ from mailer import send_alert_email
 from datetime import datetime
 import re
 from visualizer import generate_trend_chart
+from finance import get_economic_indicators
 
 # Configuración de Logging
 logging.basicConfig(level=logging.INFO)
@@ -29,6 +30,10 @@ def main():
     # 1. Recolección de Información (Búsqueda Amplia)
     raw_news = []
     print("🔎 Buscando en medios financieros y redes sociales...")
+    
+    # 0. Obtener indicadores económicos (Paralelo a búsqueda)
+    print("💰 Obteniendo indicadores económicos...")
+    market_data = get_economic_indicators()
     
     # Búsqueda en Medios (DF, Mercurio, etc.)
     financial = search_financial_news("Banco de Chile", limit=10)
@@ -74,7 +79,7 @@ def main():
             </div>
         </div>
         """
-        send_alert_email(subject, body)
+        send_alert_email(subject, body, indicators=market_data)
         return
 
     print(f"⚡ Procesando {len(new_items)} noticias nuevas con Gemini...")
@@ -140,6 +145,17 @@ def main():
     3. Genera el 'Resumen Ejecutivo de Riesgo' en formato HTML.
     4. Asegúrate de incluir 'Brand Health Index' (0-100) y Tags [CATEGORÍA].
     5. USA ENLACES DIRECTOS (No Google Redirects).
+    6. [NUEVO] Genera un 'Google Cloud Tech Insight':
+       - Identifica el dolor o oportunidad principal en las noticias (ej: lentitud, fraude, innovación, costos).
+       - Conecta ese punto Específico con una solución de Google Cloud Platform.
+       - Usa un tono de "Asesor de Confianza", no de vendedor agresivo.
+       - Ejemplo: "Dada la expansión de Banchile Pagos, una arquitectura basada en GKE Autopilot garantizaría escalabilidad automática sin overhead operativo durante picos transaccionales."
+    
+    Formato de salida esperado (Incrústalo en el HTML):
+    ... (tu formato anterior) ...
+    <div class="tech-insight">
+        <strong>💡 Perspectiva Tecnológica (Google Cloud):</strong> [Tu consejo estratégico aquí]
+    </div>
     """
 
     try:
@@ -181,7 +197,7 @@ def main():
         subject = f"{formatted_date} Banco de Chile: Resumen de Marca e Inteligencia de Mercado - Powered by Gemini"
         
         # Enviar correo
-        send_alert_email(subject, html_report, chart_buffer=chart_buffer)
+        send_alert_email(subject, html_report, chart_buffer=chart_buffer, indicators=market_data)
         
         # Guardamos en memoria SOLO si el envío fue exitoso
         print("💾 Actualizando memoria...")
