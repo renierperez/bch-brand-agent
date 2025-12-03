@@ -86,3 +86,16 @@ gcloud run jobs execute brand-monitoring-job --region us-central1
 *   **Schedule**: Default is Mondays at 8:00 AM (Chile Time). Modify `deploy_brand.sh` to change.
 *   **Prompts**: Edit `prompts/instructions.yaml` to adjust the analysis logic.
 *   **Memory**: Deduplication logic is in `memory.py`, using Firestore collection `bch_processed_news`.
+
+## 🧪 Testing & Utilities
+
+### Reset Memory
+To clear the agent's memory (Firestore) and force it to re-process all news as "new":
+
+```bash
+# Ensure GOOGLE_CLOUD_PROJECT is set
+export GOOGLE_CLOUD_PROJECT=your-project-id
+
+# Run the reset script
+python3 reset_memory.py
+```
