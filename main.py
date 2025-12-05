@@ -9,23 +9,33 @@ from datetime import datetime
 import re
 from visualizer import generate_trend_chart
 from finance import get_economic_indicators
+from config import BRAND # Importamos la configuración dinámica
 
 # Configuración de Logging
 logging.basicConfig(level=logging.INFO)
 
 def main():
     project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")
-    location = "us-central1" # Gemini 2.5 suele estar primero aquí
-    model_name = "gemini-2.5-pro" #
+    location = "us-central1"
+    model_name = "gemini-2.5-pro"
     
     if not project_id:
         logging.error("GOOGLE_CLOUD_PROJECT environment variable not set.")
         return
 
     vertexai.init(project=project_id, location=location)
-    memory = BrandMemory()
     
-    print(f"🚀 Iniciando Agente de Vigilancia para Banco de Chile ({model_name})...")
+    # Configuración de Grounding (Google Search)
+    tools = [Tool.from_dict({"google_search": {}})]
+    
+    model = GenerativeModel(
+        model_name,
+        tools=tools
+    )
+    
+    memory = BrandMemory(project_id)
+    
+    print(f"🚀 Iniciando Agente de Vigilancia para {BRAND['name']} ({model_name})...")
 
     # 1. Recolección de Información (Búsqueda Amplia)
     raw_news = []
@@ -35,19 +45,23 @@ def main():
     print("💰 Obteniendo indicadores económicos...")
     market_data = get_economic_indicators()
     
-    # Búsqueda en Medios (DF, Mercurio, etc.)
-    financial = search_financial_news("Banco de Chile", limit=10)
-    if isinstance(financial, list): raw_news.extend(financial)
-    
-    # Búsqueda Social (X/Twitter via SerpApi)
-    social = search_social_media("Banco de Chile reclamos", limit=10)
-    if isinstance(social, list): raw_news.extend(social)
+    # Búsqueda iterativa por términos configurados
+    for term in BRAND['search_terms']:
+        print(f"   👉 Buscando: '{term}'...")
+        
+        # Financial News
+        financial = search_financial_news(term, limit=5)
+        if isinstance(financial, list): raw_news.extend(financial)
+        
+        # Social Media
+        social = search_social_media(term, limit=5)
+        if isinstance(social, list): raw_news.extend(social)
 
     # 2. Deduplicación (El Filtro de Memoria)
     new_items = []
     for item in raw_news:
         url = item.get('link')
-        if url and not memory.is_duplicate(url):
+        if url and not memory.is_news_processed(url):
             new_items.append(item)
         else:
             logging.info(f"♻️ Saltando duplicado: {item.get('title')}")
@@ -64,13 +78,13 @@ def main():
         month_es = months_es[now.month]
         formatted_date = f"[{month_es} {now.day}, {now.year}]"
         
-        subject = f"{formatted_date} Banco de Chile: Reporte de Monitoreo - Sin Novedades"
-        body = """
+        subject = f"{formatted_date} {BRAND['name']}: Reporte de Monitoreo - Sin Novedades"
+        body = f"""
         <div style="text-align: center; padding: 30px 20px;">
             <div style="font-size: 48px; margin-bottom: 15px;">✅</div>
             <h2 style="color: #2E7D32; margin: 0 0 10px 0; font-family: Helvetica, Arial, sans-serif;">Sin Novedades Relevantes</h2>
             <p style="color: #555; font-size: 16px; line-height: 1.5; margin: 0 0 20px 0;">
-                El sistema de monitoreo no ha detectado nuevas menciones críticas ni noticias relevantes desde la última ejecución.
+                El sistema de monitoreo no ha detectado nuevas menciones críticas ni noticias relevantes para <strong>{BRAND['name']}</strong> desde la última ejecución.
             </p>
             <div style="background-color: #f5f5f5; border-radius: 8px; padding: 15px; display: inline-block;">
                 <p style="color: #777; font-size: 14px; margin: 0;">
@@ -79,20 +93,12 @@ def main():
             </div>
         </div>
         """
-        send_alert_email(subject, body, indicators=market_data)
+        send_alert_email(subject, body, indicators=market_data, brand_config=BRAND)
         return
 
     print(f"⚡ Procesando {len(new_items)} noticias nuevas con Gemini...")
 
     # 3. Análisis Cognitivo (Gemini 2.5 Pro con Grounding)
-    # Definición de la herramienta de búsqueda
-    # Usamos el workaround probado si la versión estándar falla, pero intentaremos seguir la guía del usuario.
-    # Sin embargo, para asegurar compatibilidad con el entorno actual, usaré el workaround que sé que funciona
-    # o la sintaxis robusta.
-    # Definición de la herramienta de búsqueda
-    # Usamos Tool.from_dict porque la clase 'GoogleSearch' no existe en la versión actual del SDK instalada.
-    # Esto genera el payload JSON correcto: {"tools": [{"google_search": {}}]}
-    # que es requerido por la API para evitar el error 400.
     print("⚠️ Usando workaround para Grounding Tool (google_search dict)...")
     tools = [Tool.from_dict({'google_search': {}})]
 
@@ -105,20 +111,20 @@ def main():
         # Fallback si falla la lectura del archivo
         loaded_instructions = """
         **Output Format (HTML)**:
-        <p><strong>Estado General:</strong> <span style="color: [green/yellow/red];">[Estable/Alerta/Crisis]</span></p>
+        <p><strong>Estado General:</strong> <span style="color: [green/yellow/red];">[Estable/Alerta/Crisis]</span> | <strong>Brand Health Index:</strong> [0-100]/100</p>
         <p><strong>Análisis:</strong> [2-3 líneas de análisis experto sobre por qué el estado es ese, mencionando tendencias o noticias clave]</p>
         <p><strong>Recomendación:</strong> [1 línea de recomendación para la alta dirección]</p>
         <hr>
         <h4>Detalle de Menciones</h4>
         <ul>
-          <li><strong>Mención:</strong> [Resumen de la mención]. <strong>Sentimiento:</strong> <span style="color: #00C853;">Positivo</span> / <span style="color: #607D8B;">Neutro</span> / <span style="color: #D32F2F;">Negativo</span>. <a href="[URL]" target="_blank">leer más</a></li>
+          <li><strong>[TAG]</strong> <strong>Mención:</strong> [Resumen]. <strong>Sentimiento:</strong> <span style="color: #00C853;">Positivo</span> / <span style="color: #607D8B;">Neutro</span> / <span style="color: #D32F2F;">Negativo</span>. <a href="[URL_FUENTE_DIRECTA]" target="_blank">leer más</a></li>
         </ul>
         """
 
     model = GenerativeModel(
         model_name,
         tools=tools,
-        system_instruction=f"""Eres un Analista de Riesgo Reputacional Senior del Banco de Chile. 
+        system_instruction=f"""Eres un Analista de Riesgo Reputacional Senior de {BRAND['name']}. 
         Tu trabajo es analizar las noticias ingresadas y generar un reporte ejecutivo HTML.
         
         Reglas:
@@ -130,14 +136,19 @@ def main():
         
         {loaded_instructions}"""
     )
+    
+    # Construir Contexto
+    context_str = ""
+    for i, item in enumerate(new_items, 1):
+        context_str += f"{i}. [{item.get('date', 'Fecha desc.')}] {item['title']} ({item['link']})\n"
 
-    # Convertimos la lista de noticias nuevas a texto para el prompt
-    context_str = "\n".join([f"- {n.get('title', 'Sin título')} (Date: {n.get('date', 'Unknown')}) [Link: {n.get('link', 'No link')}]" for n in new_items])
-
-    prompt = f"""
+    prompt = f'''
     Analiza las siguientes menciones NUEVAS recolectadas hoy {datetime.now().strftime('%Y-%m-%d')}:
     
     {context_str}
+    
+    Tus competidores son: {', '.join(BRAND['competitors'])}.
+    Tu foco tecnológico estratégico es: {BRAND['tech_focus']}.
     
     Tarea:
     1. Verifica la veracidad usando Grounding (Google Search).
@@ -147,16 +158,24 @@ def main():
     5. USA ENLACES DIRECTOS (No Google Redirects).
     6. [NUEVO] Genera un 'Google Cloud Tech Insight':
        - Identifica el dolor o oportunidad principal en las noticias (ej: lentitud, fraude, innovación, costos).
-       - Conecta ese punto Específico con una solución de Google Cloud Platform.
+       - Conecta ese punto Específico con una solución de Google Cloud Platform que ayude a {BRAND['name']}.
        - Usa un tono de "Asesor de Confianza", no de vendedor agresivo.
-       - Ejemplo: "Dada la expansión de Banchile Pagos, una arquitectura basada en GKE Autopilot garantizaría escalabilidad automática sin overhead operativo durante picos transaccionales."
+       - Ejemplo: "Dada la expansión de {BRAND['name']}, una arquitectura basada en GKE Autopilot..."
     
     Formato de salida esperado (Incrústalo en el HTML):
-    ... (tu formato anterior) ...
+    <p><strong>Estado General:</strong> <span style="color: [green/yellow/red];">[Estable/Alerta/Crisis]</span> | <strong>Brand Health Index:</strong> [0-100]/100</p>
+    <p><strong>Análisis:</strong> [2-3 líneas de análisis experto sobre por qué el estado es ese, mencionando tendencias o noticias clave]</p>
+    <p><strong>Recomendación:</strong> [1 línea de recomendación para la alta dirección]</p>
+    <hr>
+    <h4>Detalle de Menciones</h4>
+    <ul>
+      <li><strong>[TAG]</strong> <strong>Mención:</strong> [Resumen]. <strong>Sentimiento:</strong> <span style="color: #00C853;">Positivo</span> / <span style="color: #607D8B;">Neutro</span> / <span style="color: #D32F2F;">Negativo</span>. <a href="[URL_FUENTE_DIRECTA]" target="_blank">leer más</a></li>
+    </ul>
+    
     <div class="tech-insight">
-        <strong>💡 Perspectiva Tecnológica (Google Cloud):</strong> [Tu consejo estratégico aquí]
+        <strong>Perspectiva Tecnológica (Google Cloud):</strong> [Tu consejo estratégico aquí]
     </div>
-    """
+    '''
 
     try:
         response = model.generate_content(prompt)
@@ -185,7 +204,6 @@ def main():
                 logging.error(f"Error generating chart: {e}")
         
         # 4. Acción: Enviar Correo y Guardar en Memoria
-        # Formato de fecha personalizado para el asunto
         months_es = {
             1: "Ene", 2: "Feb", 3: "Mar", 4: "Abr", 5: "May", 6: "Jun",
             7: "Jul", 8: "Ago", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dic"
@@ -194,12 +212,14 @@ def main():
         month_es = months_es[now.month]
         formatted_date = f"[{month_es} {now.day}, {now.year}]"
         
-        subject = f"{formatted_date} Banco de Chile: Resumen de Marca e Inteligencia de Mercado - Powered by Gemini"
+        subject = f"{formatted_date} {BRAND['name']}: Resumen de Marca e Inteligencia de Mercado - Powered by Gemini"
         
-        # Enviar correo
-        send_alert_email(subject, html_report, chart_buffer=chart_buffer, indicators=market_data)
+        # 4. Enviar Correo
+        print("📧 Enviando reporte...")
+        result = send_alert_email(subject, html_report, chart_buffer=chart_buffer, indicators=market_data, brand_config=BRAND)
+        print(f"📧 Email Result: {result}")
         
-        # Guardamos en memoria SOLO si el envío fue exitoso
+        # 5. Guardar en Memoria (Solo si se envió éxito) fue exitoso
         print("💾 Actualizando memoria...")
         for item in new_items:
             memory.remember_news(item)

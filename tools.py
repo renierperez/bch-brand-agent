@@ -16,7 +16,7 @@ def search_social_media(query: str, limit: int = 10) -> List[Dict[str, Any]]:
     url = "https://serpapi.com/search"
     params = {
         "engine": "google",
-        "q": f"site:twitter.com {query}",
+        "q": f"(site:twitter.com OR site:linkedin.com OR site:facebook.com OR site:instagram.com OR site:reddit.com) {query}",
         "api_key": api_key,
         "num": limit
     }
@@ -33,6 +33,9 @@ def search_social_media(query: str, limit: int = 10) -> List[Dict[str, Any]]:
                 "snippet": result.get("snippet"),
                 "date": result.get("date") or result.get("time_ago")
             })
+        logging.info(f"📱 SerpApi Social Search for '{query}' found {len(results)} results.")
+        for res in results[:3]: # Log first 3 for verification
+            logging.info(f"   - [Social] {res.get('title')} ({res.get('link')})")
         return results
     except Exception as e:
         logging.error(f"SerpApi failed: {str(e)}")

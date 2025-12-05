@@ -1,0 +1,43 @@
+# brands_config.yaml - Configuración Estratégica: Duopolio Banca Chilena
+
+banco_chile:
+  id: "banco_chile"
+  name: "Banco de Chile"
+  header_html: "<span style=\"font-family: 'Old English Text MT', 'Cloister Black', 'Blackletter', 'Gothic', serif; font-weight: normal; letter-spacing: 1px;\">Banco de Chile</span>"
+  search_terms: 
+    - "Banco de Chile"
+    - "Banco Edwards"      # Segmento Premium/High Net Worth (Crítico para el negocio)
+    - "Cuenta FAN"         # Segmento Digital Masivo (Competencia Fintech)
+    - "Banchile Inversiones" # Brazo de Inversiones
+    - "Banchile Pagos"       # Red de Adquirencia
+    - "Eduardo Ebensperger"  # CEO
+    - "Esteban Kemp"         # Gte. Marketing, Tecnología y Digital
+    - "Julio Medina Ortega"  # Gte. Tecnología
+    - "App de Banco de Chile" # Experiencia Digital
+    - "directorio Banco de Chile" # Gobierno Corporativo
+  primary_color: "#003399" # Azul Chile Corporativo
+  secondary_color: "#FFFFFF"
+  competitors: ["Santander", "Bci", "Scotiabank", "Itaú"]
+  # Foco Tech: El "Chile" prioriza la seguridad y la sofisticación.
+  # Sugerencia GCP: Mandiant para ciberseguridad premium y Vertex AI para asesoría de inversiones personalizada.
+  tech_focus: "Ciberseguridad Ofensiva (Mandiant), IA para Wealth Management (Vertex AI), Modernización de Core Bancario, Estabilidad App Móvil."
+
+banco_estado:
+  id: "banco_estado"
+  name: "BancoEstado"
+  header_html: "<span style=\"font-family: 'Times New Roman', Times, serif; font-style: italic; font-weight: normal;\">Banco</span><span style=\"font-family: Arial, Helvetica, sans-serif; font-style: italic; font-weight: bold;\">Estado</span>"
+  search_terms: 
+    - "BancoEstado"
+    - "CuentaRUT"          # El producto más masivo (Termómetro social de la banca)
+    - "CajaVecina"         # Red de corresponsalía (Clave para continuidad operativa)
+    - "Billetera BancoEstado" # Pagos Digitales
+    - "Daniel Hojman"      # Presidente
+    - "Caída BancoEstado"  # Término de "Alerta Temprana" para fallas sistémicas
+    - "App de Banco Estado" # Monitoreo de experiencia digital
+    - "directorio banco estado" # Gobierno Corporativo
+  primary_color: "#FF6600" # Naranja Pato Corporativo
+  secondary_color: "#FFFFFF"
+  competitors: ["Banco de Chile", "Santander", "Mercado Pago", "Caja Los Andes"]
+  # Foco Tech: BancoEstado necesita "fuerza bruta" inteligente para soportar millones de TPS.
+  # Sugerencia GCP: GKE Autopilot para escalar a cero costo o infinito según la demanda (pagos de bonos).
+  tech_focus: "Escalabilidad Elástica (GKE Autopilot), Alta Disponibilidad Multi-Región, Inclusión Financiera Digital, Modernización de Legacy."

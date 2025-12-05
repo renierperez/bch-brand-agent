@@ -4,48 +4,45 @@ import hashlib
 from typing import List, Dict, Any
 from google.cloud import firestore
 import datetime
+from config import BRAND
 
 class BrandMemory:
-    def __init__(self):
-        self.project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")
-        self.collection_name = "bch_processed_news"
-        if self.project_id:
-            self.db = firestore.Client(project=self.project_id)
+    def __init__(self, project_id: str = None):
+        self.db = None
+        if not project_id:
+            project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")
+            
+        if project_id:
+            try:
+                self.db = firestore.Client(project=project_id)
+                # Colecciones dinámicas basadas en la marca
+                self.collection_name = f"{BRAND['id']}_processed_news"
+                self.history_collection = f"{BRAND['id']}_brand_history"
+            except Exception as e:
+                logging.error(f"Error connecting to Firestore: {e}")
         else:
-            self.db = None
             logging.warning("⚠️ Firestore no inicializado: Faltan env vars.")
 
-    def is_duplicate(self, url: str) -> bool:
-        """Verifica si la URL ya fue procesada anteriormente."""
-        if not self.db or not url: return False
+    def is_news_processed(self, url: str) -> bool:
+        """Verifica si la noticia ya fue procesada."""
+        if not self.db: return False
         
-        # Hash determinista de la URL para usar como ID de documento
-        doc_id = hashlib.md5(url.encode('utf-8')).hexdigest()
-        doc_ref = self.db.collection(self.collection_name).document(doc_id)
-        
-        try:
-            doc = doc_ref.get()
-            return doc.exists
-        except Exception as e:
-            logging.error(f"Error consultando Firestore: {e}")
-            return False
+        docs = self.db.collection(self.collection_name).where("url", "==", url).stream()
+        return any(True for _ in docs)
 
-    def remember_news(self, news_item: Dict[str, Any]):
-        """Guarda la noticia procesada para no repetirla."""
+    def remember_news(self, news_item: dict):
+        """Guarda la noticia en memoria."""
         if not self.db: return
         
-        url = news_item.get('link') or news_item.get('url')
-        if not url: return
-
-        doc_id = hashlib.md5(url.encode('utf-8')).hexdigest()
-        doc_ref = self.db.collection(self.collection_name).document(doc_id)
-        
-        doc_ref.set({
-            "title": news_item.get('title'),
-            "url": url,
-            "processed_at": firestore.SERVER_TIMESTAMP,
-            "sentiment": news_item.get('sentiment', 'unknown')
-        })
+        try:
+            self.db.collection(self.collection_name).add({
+                "url": news_item['link'],
+                "title": news_item['title'],
+                "processed_at": firestore.SERVER_TIMESTAMP,
+                "sentiment": "unknown" 
+            })
+        except Exception as e:
+            logging.error(f"Error saving to memory: {e}")
 
     def save_daily_summary(self, score: int):
         """Guarda el Brand Health Index del día."""
@@ -53,7 +50,7 @@ class BrandMemory:
         
         try:
             # Usamos timestamp como ID para historial cronológico
-            doc_ref = self.db.collection("bch_brand_history").document()
+            doc_ref = self.db.collection(self.history_collection).document()
             doc_ref.set({
                 "timestamp": firestore.SERVER_TIMESTAMP,
                 "brand_index": score,
@@ -67,7 +64,7 @@ class BrandMemory:
         if not self.db: return []
         
         try:
-            docs = self.db.collection("bch_brand_history")\
+            docs = self.db.collection(self.history_collection)\
                 .order_by("timestamp", direction=firestore.Query.DESCENDING)\
                 .limit(limit)\
                 .stream()

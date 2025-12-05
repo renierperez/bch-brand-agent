@@ -51,15 +51,21 @@ def _generate_indicators_html(indicators):
     """
     return html
 
-def send_alert_email(subject: str, body: str, recipient: str = None, chart_buffer=None, indicators=None) -> str:
-    """Sends an email alert with Banco de Chile branding and optional trend chart."""
+def send_alert_email(subject: str, body: str, recipient: str = None, chart_buffer=None, indicators=None, brand_config=None) -> str:
+    """Sends an email alert with dynamic branding."""
     
-    # CSS para el Tech Insight (Estilo "Google Cloud")
-    tech_insight_style = """
+    # Configuración de Marca (Fallback a Banco de Chile si no se provee)
+    primary_color = brand_config.get('primary_color', '#003399') if brand_config else '#003399'
+    secondary_color = brand_config.get('secondary_color', '#FFFFFF') if brand_config else '#FFFFFF'
+    bank_name = brand_config.get('name', 'Banco de Chile') if brand_config else 'Banco de Chile'
+    header_content = brand_config.get('header_html', bank_name) if brand_config else bank_name
+
+    # CSS para el Tech Insight (Estilo Dinámico)
+    tech_insight_style = f"""
     <style>
-        .tech-insight {
-            background-color: #f8f9fa; /* Fondo gris muy suave */
-            border-left: 4px solid #4285F4; /* Google Blue */
+        .tech-insight {{
+            background-color: #f8f9fa;
+            border-left: 4px solid {primary_color}; /* Color dinámico */
             padding: 15px;
             margin-top: 20px;
             margin-bottom: 20px;
@@ -67,34 +73,36 @@ def send_alert_email(subject: str, body: str, recipient: str = None, chart_buffe
             font-size: 14px;
             color: #5f6368;
             border-radius: 0 4px 4px 0;
-        }
-        .tech-insight strong {
+        }}
+        .tech-insight strong {{
             color: #202124;
             display: block;
             margin-bottom: 5px;
-        }
+        }}
     </style>
     """
 
     sender_email = os.environ.get("GMAIL_USER")
     password = os.environ.get("GMAIL_PASSWORD")
     if not recipient:
-        recipient = os.environ.get("BCC_EMAILS", sender_email) # Default to BCC or sender
+        recipient = os.environ.get("BCC_EMAILS", sender_email).replace(";", ",")
     
     if not sender_email or not password:
         return "Gmail credentials not found."
     
     msg = MIMEMultipart('related')
     msg['From'] = sender_email
-    msg['To'] = recipient
+    msg['To'] = sender_email # To field shows sender (self-copy) to hide BCCs
     msg['Subject'] = subject
     
+    # Parse recipients list
+    to_addrs = recipient.split(',')
+    
     import markdown
-    # Clean Gemini output if it includes code blocks
     cleaned_body = body.replace("```html", "").replace("```", "").strip()
     html_body_content = markdown.markdown(cleaned_body)
     
-    # Inyectamos el estilo al principio del HTML content
+    # Inyectamos el estilo
     html_body_content = tech_insight_style + html_body_content
     
     # Chart HTML section
@@ -107,20 +115,20 @@ def send_alert_email(subject: str, body: str, recipient: str = None, chart_buffe
         </div>
         """
 
-    # Banco de Chile Branding (Simplified HTML)
+    # HTML Body con Branding Dinámico
     html_body = f"""
     <html>
     <body style="font-family: Arial, sans-serif; color: #333; margin: 0; padding: 0; background-color: #f4f4f4;">
         <div style="max-width: 800px; margin: 0 auto; background-color: #ffffff; border: 1px solid #ddd; border-top: none;">
-            <div style="background-color: #003399; padding: 20px; text-align: center;">
-                <h1 style="color: white; margin: 0; font-size: 24px;">Banco de Chile</h1>
-                <p style="color: #ccc; margin: 5px 0 0 0; font-size: 14px;">Vigilancia de Marca & Inteligencia de Mercado</p>
+            <div style="background-color: {primary_color}; padding: 20px; text-align: center;">
+                <h1 style="color: {secondary_color}; margin: 0; font-size: 24px;">{header_content}</h1>
+                <p style="color: #eee; margin: 5px 0 0 0; font-size: 14px;">Vigilancia de Marca & Inteligencia de Mercado</p>
             </div>
             <div style="padding: 20px;">
                 
                 <!-- Executive Summary Section -->
-                <div style="background-color: #f0f4f8; padding: 20px; border-left: 5px solid #003399; margin-bottom: 25px; border-radius: 0 5px 5px 0;">
-                    <h2 style="color: #003399; margin-top: 0; font-size: 18px; border-bottom: 1px solid #003399; padding-bottom: 10px;">Resumen Ejecutivo de Riesgo</h2>
+                <div style="background-color: #f0f4f8; padding: 20px; border-left: 5px solid {primary_color}; margin-bottom: 25px; border-radius: 0 5px 5px 0;">
+                    <h2 style="color: {primary_color}; margin-top: 0; font-size: 18px; border-bottom: 1px solid {primary_color}; padding-bottom: 10px;">Resumen Ejecutivo de Riesgo</h2>
                     <div style="font-size: 15px; line-height: 1.6; color: #333;">
                         {html_body_content}
                     </div>
@@ -158,7 +166,7 @@ def send_alert_email(subject: str, body: str, recipient: str = None, chart_buffe
     try:
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
             server.login(sender_email, password)
-            server.send_message(msg)
+            server.send_message(msg, to_addrs=to_addrs)
         return "Email sent successfully."
     except Exception as e:
         return f"Failed to send email: {str(e)}"
