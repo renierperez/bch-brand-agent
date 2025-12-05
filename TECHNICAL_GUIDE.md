@@ -1,4 +1,4 @@
-# Technical Guide: Building an Autonomous Multi-Tenant Brand Monitoring Agent on Google Cloud
+# Technical Guide: Autonomous Brand Intelligence (ABI) on Google Cloud
 
 **Target Audience:** Google Cloud Architects & Senior Developers
 **Version:** 5.0

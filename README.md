@@ -1,6 +1,6 @@
-# Brand Monitoring & Market Intelligence Agent (V5.0)
+# Autonomous Brand Intelligence (ABI)
 
-An autonomous, **multi-tenant** AI agent powered by **Google Gemini 2.5 Pro** and **Vertex AI Grounding** that monitors brand reputation, financial news, and social media sentiment for multiple organizations (e.g., Banco de Chile, BancoEstado). It generates professional, brand-specific executive summaries and delivers them via email.
+A **multi-tenant**, autonomous AI system powered by **Google Gemini 2.5 Pro** and **Vertex AI Grounding** that delivers real-time brand reputation monitoring, financial news analysis, and social media sentiment tracking for multiple organizations (e.g., Banco de Chile, BancoEstado).
 
 ## 🚀 Features (V5.0)
 
