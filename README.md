@@ -45,10 +45,13 @@ cd bch-brand-agent
 
 ### 2. Configure Environment
 
-Ensure you have the following credentials ready:
+Ensure you have the following credentials stored in **Google Secret Manager**:
 *   `GMAIL_USER`: Your Gmail address.
-*   `GMAIL_PASSWORD`: Your App Password (stored in Secret Manager).
-*   `SERPAPI_KEY`: Your SerpApi key (stored in Secret Manager).
+*   `GMAIL_PASSWORD`: Your App Password.
+*   `SERPAPI_KEY`: Your SerpApi key.
+*   `BCC_EMAILS`: Semicolon-separated list of BCC recipients (e.g., `user1@example.com;user2@example.com`).
+
+The `deploy_multitenant.sh` script is configured to fetch these values directly from Secret Manager during deployment.
 
 ### 3. Deploy a Brand Agent
 

@@ -40,15 +40,14 @@ REGION="us-central1"
 echo "☁️ Updating/Creating Cloud Run Job: $JOB_NAME"
 
 # Define fixed variables (or fetch from Secret Manager if preferred)
-GMAIL_USER="renier.perez@gmail.com"
-BCC_EMAILS="renier.perez@gmail.com;renierperez@google.com;pedrogarciacl@google.com;mmarocchi@google.com;odure@google.com"
+# GMAIL_USER and BCC_EMAILS are now fetched from Secret Manager
 
 if gcloud run jobs describe $JOB_NAME --region $REGION > /dev/null 2>&1; then
     gcloud run jobs update $JOB_NAME \
       --image $IMAGE_NAME \
       --region $REGION \
-      --set-env-vars="BRAND_ID=$BRAND_ID,GOOGLE_CLOUD_PROJECT=$GOOGLE_CLOUD_PROJECT,GMAIL_USER=$GMAIL_USER,BCC_EMAILS=$BCC_EMAILS" \
-      --set-secrets="GMAIL_PASSWORD=GMAIL_PASSWORD:latest,SERPAPI_KEY=SERPAPI_KEY:latest" \
+      --set-env-vars="BRAND_ID=$BRAND_ID,GOOGLE_CLOUD_PROJECT=$GOOGLE_CLOUD_PROJECT" \
+      --set-secrets="GMAIL_PASSWORD=GMAIL_PASSWORD:latest,SERPAPI_KEY=SERPAPI_KEY:latest,GMAIL_USER=GMAIL_USER:latest,BCC_EMAILS=BCC_EMAILS:latest" \
       --max-retries 0 \
       --task-timeout 300s \
       --memory 2Gi \
@@ -57,8 +56,8 @@ else
     gcloud run jobs create $JOB_NAME \
       --image $IMAGE_NAME \
       --region $REGION \
-      --set-env-vars="BRAND_ID=$BRAND_ID,GOOGLE_CLOUD_PROJECT=$GOOGLE_CLOUD_PROJECT,GMAIL_USER=$GMAIL_USER,BCC_EMAILS=$BCC_EMAILS" \
-      --set-secrets="GMAIL_PASSWORD=GMAIL_PASSWORD:latest,SERPAPI_KEY=SERPAPI_KEY:latest" \
+      --set-env-vars="BRAND_ID=$BRAND_ID,GOOGLE_CLOUD_PROJECT=$GOOGLE_CLOUD_PROJECT" \
+      --set-secrets="GMAIL_PASSWORD=GMAIL_PASSWORD:latest,SERPAPI_KEY=SERPAPI_KEY:latest,GMAIL_USER=GMAIL_USER:latest,BCC_EMAILS=BCC_EMAILS:latest" \
       --max-retries 0 \
       --task-timeout 300s \
       --memory 2Gi \
