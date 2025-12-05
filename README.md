@@ -41,8 +41,8 @@ A **multi-tenant**, autonomous AI system powered by **Google Gemini 2.5 Pro** an
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/renierperez/bch-brand-agent.git
-cd bch-brand-agent
+git clone https://github.com/renierperez/autonomous-brand-intelligence.git
+cd autonomous-brand-intelligence
 ```
 
 ### 2. Configure Environment
