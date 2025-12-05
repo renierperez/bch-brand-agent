@@ -1,38 +1,35 @@
-# Brand Monitoring & Market Intelligence Agent
+# Brand Monitoring & Market Intelligence Agent (V5.0)
 
-An autonomous AI agent powered by **Google Gemini 2.5 Pro** and **Vertex AI Grounding** that monitors brand reputation, financial news, and social media sentiment. It generates professional, weekly executive summaries and delivers them via email.
+An autonomous, **multi-tenant** AI agent powered by **Google Gemini 2.5 Pro** and **Vertex AI Grounding** that monitors brand reputation, financial news, and social media sentiment for multiple organizations (e.g., Banco de Chile, BancoEstado). It generates professional, brand-specific executive summaries and delivers them via email.
 
-## 🚀 Features
+## 🚀 Features (V5.0)
 
-*   **Autonomous Monitoring**: Scans financial news and social media for brand mentions.
-*   **AI Analysis**: Uses Gemini 2.5 Pro to analyze sentiment, urgency, and context.
+*   **Multi-Tenant Architecture**: Single codebase supporting multiple brands with isolated configurations and memories.
+*   **Dynamic Branding**: Custom HTML headers, logos, and color schemes for each brand (e.g., Gothic style for Banco de Chile, Serif/Sans mix for BancoEstado).
+*   **Expanded Intelligence**:
+    *   **Social Media**: Monitors Twitter, LinkedIn, Facebook, Instagram, and Reddit via SerpApi.
+    *   **Strategic Search**: Tracks executives, subsidiaries, and digital channels (Apps, Directories).
+*   **AI Analysis**: Uses Gemini 2.5 Pro to analyze sentiment, urgency, and context, generating "Brand Health Index" scores.
 *   **Grounding**: Verifies information using Google Search Grounding for accuracy.
-*   **Professional Reporting**: Generates HTML email reports with color-coded sentiment analysis.
-*   **Serverless Deployment**: Runs on Google Cloud Run Jobs with Cloud Scheduler.
+*   **Professional Reporting**: Generates HTML email reports with "Executive Risk Summary" and "Tech Insights".
+*   **Observability**: Detailed logging of search results and execution flow.
 
 ## 🏗️ Architecture
 
-![Architecture Diagram](docs/architecture_diagram.png)
-
 *   **Core Logic**: Python 3.11 modular agent (`main.py`).
+*   **Configuration**: `brands_config.yaml` defines brand-specific settings (colors, search terms, competitors).
 *   **AI Model**: Gemini 2.5 Pro (Vertex AI).
-*   **Memory**: Google Cloud Firestore (Deduplication).
-*   **Search**: Vertex AI Grounding + SerpApi (fallback/social).
-*   **Compute**: Google Cloud Run (Serverless Jobs).
+*   **Memory**: Google Cloud Firestore (Deduplication, isolated collections per brand).
+*   **Search**: Vertex AI Grounding + SerpApi (Social Media & Financial News).
+*   **Compute**: Google Cloud Run (Serverless Jobs, one per brand).
 *   **Scheduling**: Google Cloud Scheduler (Weekly, Mondays at 8:00 AM Chile Time).
-*   **Security**: Google Secret Manager for credentials.
-*   **Notifications**: SMTP (Gmail) with HTML templating.
+*   **Security**: Google Secret Manager for credentials (`GMAIL_PASSWORD`, `SERPAPI_KEY`).
+*   **Notifications**: SMTP (Gmail) with robust BCC handling.
 
 ## 🛠️ Prerequisites
 
 1.  **Google Cloud Platform Project** with billing enabled.
-2.  **APIs Enabled**:
-    *   Vertex AI API
-    *   Cloud Run API
-    *   Cloud Build API
-    *   Secret Manager API
-    *   Cloud Scheduler API
-    *   Firestore API
+2.  **APIs Enabled**: Vertex AI, Cloud Run, Cloud Build, Secret Manager, Cloud Scheduler, Firestore.
 3.  **gcloud CLI** installed and authenticated.
 4.  **SerpApi Key** (for specialized search).
 5.  **Gmail App Password** (for sending emails).
@@ -50,52 +47,67 @@ cd bch-brand-agent
 
 Ensure you have the following credentials ready:
 *   `GMAIL_USER`: Your Gmail address.
-*   `GMAIL_PASSWORD`: Your App Password.
-*   `SERPAPI_KEY`: Your SerpApi key.
+*   `GMAIL_PASSWORD`: Your App Password (stored in Secret Manager).
+*   `SERPAPI_KEY`: Your SerpApi key (stored in Secret Manager).
 
-### 3. Deploy to Google Cloud
+### 3. Deploy a Brand Agent
 
-The repository includes a helper script `deploy_brand.sh` that handles:
-*   Docker image build and push to Artifact Registry.
-*   Secret creation in Secret Manager.
-*   Cloud Run Job creation/update.
-*   Cloud Scheduler configuration.
+Use the `deploy_multitenant.sh` script to deploy an agent for a specific brand defined in `brands_config.yaml`.
 
-Run the deployment script:
-
+**Usage:**
 ```bash
-# Make the script executable
-chmod +x deploy_brand.sh
-
-# Run deployment
-./deploy_brand.sh
+./deploy_multitenant.sh <BRAND_ID>
 ```
 
-**Note**: You might need to adjust the `PROJECT_ID` and `REGION` variables in `deploy_brand.sh` or export them before running.
-
-### 4. Manual Execution (Optional)
-
-To trigger the job manually:
-
+**Examples:**
 ```bash
-gcloud run jobs execute brand-monitoring-job --region us-central1
+# Deploy Banco de Chile Agent
+./deploy_multitenant.sh banco_chile
+
+# Deploy BancoEstado Agent
+./deploy_multitenant.sh banco_estado
 ```
 
-## 📝 Configuration
+This script automatically:
+1.  Builds the Docker image.
+2.  Updates/Creates the Cloud Run Job for that brand.
+3.  Configures environment variables and secrets.
+4.  Sets up the Cloud Scheduler job.
 
-*   **Schedule**: Default is Mondays at 8:00 AM (Chile Time). Modify `deploy_brand.sh` to change.
-*   **Prompts**: Edit `prompts/instructions.yaml` to adjust the analysis logic.
-*   **Memory**: Deduplication logic is in `memory.py`, using Firestore collection `bch_processed_news`.
+## 📝 Configuration (`brands_config.yaml`)
+
+Add or modify brands in `brands_config.yaml`:
+
+```yaml
+banco_chile:
+  id: "banco_chile"
+  name: "Banco de Chile"
+  header_html: "..." # Custom HTML for email header
+  search_terms:
+    - "Banco de Chile"
+    - "Esteban Kemp"
+  primary_color: "#003399"
+  secondary_color: "#FFFFFF"
+  competitors: ["Santander", "Bci"]
+  tech_focus: "Digital Transformation"
+
+banco_estado:
+  id: "banco_estado"
+  ...
+```
 
 ## 🧪 Testing & Utilities
 
 ### Reset Memory
-To clear the agent's memory (Firestore) and force it to re-process all news as "new":
+To clear the agent's memory (Firestore) for ALL brands and force re-processing:
 
 ```bash
-# Ensure GOOGLE_CLOUD_PROJECT is set
-export GOOGLE_CLOUD_PROJECT=your-project-id
+python3 reset_memory_multitenant.py
+```
 
-# Run the reset script
-python3 reset_memory.py
+### Manual Execution
+To trigger a specific brand's agent manually:
+
+```bash
+gcloud run jobs execute brand-agent-banco-chile --region us-central1
 ```
