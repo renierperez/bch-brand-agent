@@ -16,6 +16,8 @@ An autonomous, **multi-tenant** AI agent powered by **Google Gemini 2.5 Pro** an
 
 ## 🏗️ Architecture
 
+![Architecture Diagram](docs/architecture_diagram_v5.png)
+
 *   **Core Logic**: Python 3.11 modular agent (`main.py`).
 *   **Configuration**: `brands_config.yaml` defines brand-specific settings (colors, search terms, competitors).
 *   **AI Model**: Gemini 2.5 Pro (Vertex AI).
